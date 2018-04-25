@@ -1,0 +1,22 @@
+# ASSIGNMENT 1:
+
+# DIFFERENCE BETWEEN SPARK AND REGULAR PYTHON
+
+### PYTHON ###
+[x_maxlu@heffa1 Desktop]$ time python assign1_b.py 
+
+real	15m53.587s
+user	15m35.859s
+sys	0m11.665s
+
+### SPARK ###
+User: 	x_maxlu
+Name: 	assign1_a.py
+Application Type: 	SPARK
+Application Tags: 	
+State: 	FINISHED
+FinalStatus: 	SUCCEEDED
+Started: 	Wed Apr 25 13:36:39 +0200 2018
+Elapsed: 	5mins, 24sec
+Tracking URL: 	History
+Diagnostics: 	
