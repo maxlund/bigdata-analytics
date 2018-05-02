@@ -1,7 +1,7 @@
 from pyspark import SparkContext
 
 
-sc = SparkContext(appName = "assign2")
+sc = SparkContext(appName = "assign5")
 
 # Assignment 5
 
@@ -26,7 +26,7 @@ station_numbers = station_lines.map(lambda line: line[0])
 station_numbers = sc.broadcast(station_numbers.collect())
 # create key-value pairs of ((station_number, year+month), precipitation)
 precip = precip_lines.map(lambda line: ((line[0], line[1][0:7]), float(line[3])))
-# filter out ostergotland stations in precipitation rdd 
+# filter out ostergotland stations in precipitation rdd
 precip = precip.filter(lambda x: x[0][0] in station_numbers.value)
 # create key-value pairs (year+month, precipitation)
 precip = precip.map(lambda x: (x[0][1], x[1]))

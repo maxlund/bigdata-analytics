@@ -1,7 +1,7 @@
 from pyspark import SparkContext
 
 
-sc = SparkContext(appName = "assign2")
+sc = SparkContext(appName = "assign3")
 
 # Assignment 3
 
@@ -16,12 +16,11 @@ lines = lines.filter(lambda x: int(x[1][0:4]) >= 1960 and int(x[1][0:4]) <= 2014
 # create key-value pairs with key: (year, month, st_number) value: avg. temperature
 temps = lines.map(lambda x: ((x[1][0:7], x[0]), float(x[3])))
 
+# calculate average temperature
 sum_count = temps.combineByKey(lambda value: (value, 1),
                                lambda x, value: (x[0] + value, x[1] + 1),
                                lambda x, y: (x[0] + y[0], x[1] + y[1]))
 
 average_temps = sum_count.map(lambda (key, (total_sum, count)): (key, total_sum / count))
 
-average_temps.collectAsMap()
 average_temps.saveAsTextFile("average_year_month_temps")
-
