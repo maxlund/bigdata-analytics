@@ -17,6 +17,11 @@ year_temps = lines.map(lambda x: (x[1][0:4], (float(x[3]), x[0])))
 year_temps = year_temps.filter(lambda x: int(x[0]) >= 1950 and int(x[0]) <= 2014)
 # reduce by year and sort on highest temperature
 max_temps = year_temps.reduceByKey(lambda a, b: a if a[0] >= b[0] else b)
+min_temps = year_temps.reduceByKey(lambda a, b: a if a[0] <= b[0] else b)
 max_temps_sorted = max_temps.sortByKey(ascending=False, keyfunc=lambda k: k[1][0])
+min_temps_sorted = min_temps.sortByKey(ascending=True, keyfunc=lambda k: k[1][0])
 max_temps.saveAsTextFile("max_temps")
+min_temps.saveAsTextFile("min_temps")
+
 max_temps_sorted.saveAsTextFile("max_temps_sorted")
+min_temps_sorted.saveAsTextFile("min_temps_sorted")
