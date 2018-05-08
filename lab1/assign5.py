@@ -26,15 +26,15 @@ station_numbers = station_lines.map(lambda line: line[0])
 station_numbers = sc.broadcast(station_numbers.collect())
 # create key-value pairs of ((station_number, year+month), precipitation)
 precip = precip_lines.map(lambda line: ((line[0], line[1][0:7]), float(line[3])))
+#sum monthly precipitation for each station
+sum_monthly = precip.reduceByKey(lambda x,y: x + y)
 # filter out ostergotland stations in precipitation rdd
-precip = precip.filter(lambda x: x[0][0] in station_numbers.value)
-# create key-value pairs (year+month, precipitation)
-precip = precip.map(lambda x: (x[0][1], x[1]))
-
-sum_count = precip.combineByKey(lambda value: (value, 1),
-                               lambda x, value: (x[0] + value, x[1] + 1),
-                               lambda x, y: (x[0] + y[0], x[1] + y[1]))
-
-average_precip = sum_count.map(lambda (key, (total_sum, count)): (key, total_sum / count))
-
-average_precip.saveAsTextFile("ostergotland_avg_precip")
+sum_filtered = sum_monthly.filter(lambda x: x[0][0] in station_numbers.value)
+#map values to (value,1) to be able to count and remove station from key
+sum_filtered = sum_filtered.map(lambda x: (x[0][1], (x[1], 1)))
+#sum up all the precips and count the occurences to be able to average
+final_sum = sum_filtered.reduceByKey(lambda x,y: (x[0] + y[0], x[1] + y[1]))
+#average the values by dividing by count
+final_average = final_sum.map(lambda x: (x[0], x[1][0] / x[1][1]))
+#output
+final_average.saveAsTextFile("ostergotland_avg_precip")
