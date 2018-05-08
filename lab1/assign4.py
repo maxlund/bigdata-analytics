@@ -1,9 +1,9 @@
 from pyspark import SparkContext
 
 
-sc = SparkContext(appName = "assign4")
+sc = SparkContext(appName = "assign2")
 
-# Assignment 4
+# Assignment 3
 
 # temps_file lines are in format:
 # Station number;Date;Time;Air temperature;Quality
@@ -26,12 +26,12 @@ precip = precip_lines.map(lambda line: ((line[0], line[1]), float(line[3])))
 precip_day_sum = precip.reduceByKey(lambda a, b: a + b)
 # map back to key-values of (station_number, total_precipitation)
 precip = precip_day_sum.map(lambda x: (x[0][0], x[1]))
-# filter out invalid temperatures and precipitations
-temps = temps.filter(lambda x: x[1] >= 25 and x[1] <= 30)
-precip = precip.filter(lambda x: x[1] >= 100 and x[1] <= 200)
 # get max temperature and precipitation for each station number
-temps_max = temps.reduceByKey(lambda a, b: a if a >= b else b)
-precip_max = precip.reduceByKey(lambda a, b: a if a >= b else b)
+temps = temps.reduceByKey(lambda a, b: a if a >= b else b)
+precip = precip.reduceByKey(lambda a, b: a if a >= b else b)
+# filter out invalid temperatures and precipitations
+temps_max = temps.filter(lambda x: x[1] >= 25 and x[1] <= 30)
+precip_max = precip.filter(lambda x: x[1] >= 100 and x[1] <= 200)
 # join the two RDDs to get key-values (station_number, (max_temp, max_precip))
 combined_vals = temps_max.join(precip_max)
 combined_vals.saveAsTextFile("station_number_max_temp_precip")
