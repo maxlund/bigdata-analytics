@@ -19,9 +19,9 @@ temps_file = sc.textFile("data/temperature-readings.csv")
 lines = temps_file.map(lambda line: line.split(";"))
 temps_readings = lines.map(lambda l: 
                         Row(
-                            station=l[0], 
-                            date=l[1], 
-                            year=l[1].split("-")[0], 
+                            station=l[0],
+                            year=l[1].split("-")[0],
+                            month=l[1].split("-")[1],
                             time=l[2], 
                             value=float(l[3]), 
                             quality=l[4]
@@ -36,22 +36,11 @@ schema_temps_readings.registerTempTable("temps_readings")
 # example table using as df
 # schemaTempReadingsMin = schemaTempReadings.groupBy('year', 'month', 'day', 'station').agg(F.min('value').alias('dailymin')).orderBy(['year', 'month', 'day', 'station'], ascending=[0,0,0,1])
 
-max_temps = sqlContext.sql(
-   """SELECT year, station, max(value) AS max_value
-    FROM temps_readings
-    WHERE year >= 1950 AND year <= 2014
-    GROUP BY year, station
-    ORDER BY max_value DESC""")
+avg_temps = sqlContext.sql(
+   """SELECT year, month, station, AVG(value) as average_temperature
+    FROM temps_readings 
+    WHERE year >= 1960 AND year <= 2014
+    GROUP BY year, month, station
+    ORDER BY average_temperature DESC""")
 
-min_temps = sqlContext.sql(
-   """SELECT year, station, min(value) AS min_value
-    FROM temps_readings
-    WHERE year >= 1950 AND year <= 2014
-    GROUP BY year, station
-    ORDER BY min_value DESC""")
-
-max_temps.rdd.saveAsTextFile("1_max_temps")
-min_temps.rdd.saveAsTextFile("1_min_temps")
-
-#[myprint(line) for line in max_temps.rdd.collect()]
-#[myprint(line) for line in min_temps.rdd.collect()]
+avg_temps.rdd.saveAsTextFile("3_avg")
