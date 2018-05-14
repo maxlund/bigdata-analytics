@@ -48,15 +48,28 @@ schema_precip_readings.registerTempTable("precip_readings")
 # example table using as df
 # schemaTempReadingsMin = schemaTempReadings.groupBy('year', 'month', 'day', 'station').agg(F.min('value').alias('dailymin')).orderBy(['year', 'month', 'day', 'station'], ascending=[0,0,0,1])
 
+# stations = sqlContext.sql(
+#    """SELECT station as stnumber, max(temp) as max_temp, max(precip) as max_precip FROM
+#    (SELECT station, date, temp, precip
+#    FROM temps_readings
+#    INNER JOIN precip_readings ON temps_readings.station = precip_readings.station) D
+#    GROUP BY stnumber, date
+#    HAVING max_temp >= 25 AND max_temp <= 30 AND max_precip >= 100 AND max_precip <= 200""")
+
+
 stations = sqlContext.sql(
-   """SELECT station as stnumber, max(temp) as max_temp, max(precip) as max_precip FROM
-   (SELECT station, temp, precip
-   FROM temps_readings
-   INNER JOIN precip_readings ON temps_readings.station = precip_readings.station) D
-   GROUP BY stnumber
-   HAVING max_temp >= 25 AND max_temp <= 30 AND max_precip >= 100 AND max_precip <= 200""")
+    """
+    SELECT t.station, max(t.temp), max(p.daily_precip)
+    FROM temps_readings t
+    INNER JOIN
+    (SELECT station, date, SUM(precip) as daily_precip FROM precip_readings GROUP BY station, date
+    HAVING SUM(precip) >= 100 AND SUM(precip) <= 200) p
+    ON t.station = p.station AND t.date = p.date
+    WHERE t.temp >= 25 AND t.temp <= 30
+    GROUP BY t.station
+    ORDER BY t.station DESC
+    """
+)
 
 stations.rdd.saveAsTextFile("4_stations")
 
-#[myprint(line) for line in max_temps.rdd.collect()]
-#[myprint(line) for line in min_temps.rdd.collect()]
