@@ -1,9 +1,9 @@
 from pyspark import SparkContext
 
 
-sc = SparkContext(appName = "assign2")
+sc = SparkContext(appName = "assign4")
 
-# Assignment 3
+# Assignment 4
 
 # temps_file lines are in format:
 # Station number;Date;Time;Air temperature;Quality
