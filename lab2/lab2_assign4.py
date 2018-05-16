@@ -42,34 +42,38 @@ schema_temps_readings.registerTempTable("temps_readings")
 schema_precip_readings = sqlContext.createDataFrame(precip_readings)
 schema_precip_readings.registerTempTable("precip_readings")
 
-# example query
-# max1950 = sqlContext.sql("SELECT max(value) as value FROM temps_readings WHERE year=1950")
-
-# example table using as df
-# schemaTempReadingsMin = schemaTempReadings.groupBy('year', 'month', 'day', 'station').agg(F.min('value').alias('dailymin')).orderBy(['year', 'month', 'day', 'station'], ascending=[0,0,0,1])
-
-# stations = sqlContext.sql(
-#    """SELECT station as stnumber, max(temp) as max_temp, max(precip) as max_precip FROM
-#    (SELECT station, date, temp, precip
-#    FROM temps_readings
-#    INNER JOIN precip_readings ON temps_readings.station = precip_readings.station) D
-#    GROUP BY stnumber, date
-#    HAVING max_temp >= 25 AND max_temp <= 30 AND max_precip >= 100 AND max_precip <= 200""")
-
-
-stations = sqlContext.sql(
+precip_filter = sqlContext.sql(
     """
-    SELECT t.station, max(t.temp), max(p.daily_precip)
-    FROM temps_readings t
-    INNER JOIN
-    (SELECT station, date, SUM(precip) as daily_precip FROM precip_readings GROUP BY station, date
-    HAVING SUM(precip) >= 100 AND SUM(precip) <= 200) p
-    ON t.station = p.station AND t.date = p.date
-    WHERE t.temp >= 25 AND t.temp <= 30
-    GROUP BY t.station
-    ORDER BY t.station DESC
+    SELECT station, MAX(daily_precip) AS max_precip
+    FROM
+    (SELECT station, SUM(precip) AS daily_precip FROM precip_readings
+    GROUP BY station, date) dt
+    GROUP BY station
+    HAVING MAX(daily_precip) >= 100 AND MAX(daily_precip) <= 200
     """
 )
 
-stations.rdd.saveAsTextFile("4_stations")
+precip_filter.registerTempTable("precip_filter")
+
+temps_filter = sqlContext.sql(
+    """
+    SELECT station, MAX(temp) AS max_temp
+    FROM temps_readings
+    GROUP BY station
+    HAVING MAX(temp) >= 25 AND MAX(temp) <= 30
+    """
+)
+
+temps_filter.registerTempTable("temps_filter")
+
+joined_result = sqlContext.sql(
+    """
+    SELECT t.station, t.max_temp, p.max_precip FROM
+    temps_filter t
+    INNER JOIN precip_filter p
+    ON t.station = p.station
+    """    
+)
+
+joined_result.rdd.saveAsTextFile("4_stations")
 
