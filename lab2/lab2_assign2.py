@@ -37,18 +37,24 @@ schema_temps_readings.registerTempTable("temps_readings")
 # schemaTempReadingsMin = schemaTempReadings.groupBy('year', 'month', 'day', 'station').agg(F.min('value').alias('dailymin')).orderBy(['year', 'month', 'day', 'station'], ascending=[0,0,0,1])
 
 count_temps = sqlContext.sql(
-   """SELECT year, month, count(value) as temps_counts
+   """
+   SELECT year, month, count(value) as temps_counts
     FROM temps_readings 
     WHERE year >= 1950 AND year <= 2014 AND value > 10 
     GROUP BY year, month
-    ORDER BY temps_counts DESC""")
+    ORDER BY temps_counts DESC
+   """)
 
 count_temps_stations = sqlContext.sql(
-   """SELECT year, month, count(value) as temps_counts
+    """
+    SELECT year, month, COUNT(station)
+    FROM
+    (SELECT DISTINCT year, month, station
     FROM temps_readings 
-    WHERE year >= 1950 AND year <= 2014 AND value > 10 
-    GROUP BY year, month, station
-    ORDER BY temps_counts DESC""")
+    WHERE year >= 1950 AND year <= 2014 AND value > 10) dt
+    GROUP BY year, month
+    """
+)
 
 count_temps.rdd.saveAsTextFile("2_count")
 count_temps_stations.rdd.saveAsTextFile("2_count_stations")
