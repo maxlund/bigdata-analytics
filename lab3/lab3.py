@@ -82,15 +82,32 @@ print("DONE!!")
 # temperature and sum them up and average to get the predicted (weighted average) temperature for our target.
 distances_kernel_values = temps.map(
     lambda x:
-    # key of the rdd
-    ((x[0][0], x[0][1], x[0][2]), 
-     # value of the rdd
-     (x[1], gaussian(haversine(longitude, 
-                               latitude, 
-                               stations_dict.value[x[0][0]][1], 
-                               stations_dict.value[x[0][0]][0]),
-                     h_distance)))
+    (
+        # key of the rdd is (stnumber, date, timeofday)
+        (x[0][0], x[0][1], x[0][2]), 
+        # value of the rdd is (temperature, kv for distance)
+        (x[1], gaussian(
+            haversine(
+                longitude,
+                latitude,
+                stations_dict.value[x[0][0]][1],
+                stations_dict.value[x[0][0]][0]),
+            h_distance))
+    )
 )
+
+dates_distances_kernel_values = distances_kernel_values.map(
+    lambda x:
+    (
+        # key of the rdd is (stnumber, date, timeofday)
+        (x[0][0], x[0][1], x[0][2]),
+        # value of the rdd is (temperature, kv for distance, kv for date)
+        (x[1][0], x[1][1], gaussian(date_distance(date, x[0][1]), h_date))
+    )
+)
+
+# TODO: We want to cache() our dates_distances_kernel_values rdd so we can reuse it
+# every time we have to calculate the time-of-day distance kernel values
 
 print(distances_kernel_values.collect()[:10])
 
