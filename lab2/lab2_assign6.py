@@ -39,33 +39,48 @@ schema_temps_readings.registerTempTable("temps_readings")
 schema_oster_readings = sqlContext.createDataFrame(oster_readings)
 schema_oster_readings.registerTempTable("oster_readings")
 
-# example query
-# max1950 = sqlContext.sql("SELECT max(value) as value FROM temps_readings WHERE year=1950")
-
-# example table using as df
-# schemaTempReadingsMin = schemaTempReadings.groupBy('year', 'month', 'day', 'station').agg(F.min('value').alias('dailymin')).orderBy(['year', 'month', 'day', 'station'], ascending=[0,0,0,1])
-
-diff = sqlContext.sql(
+monthly_station_avg = sqlContext.sql(
     """
-    SELECT t1.year, t1.month, (t1.avg_temp - t2.avg_monthly_temp) AS temp_difference
-    FROM 
-    (SELECT t.year, t.month, avg(t.temp) as avg_temp
-    FROM temps_readings t 
-    INNER JOIN oster_readings o1
-    ON t.station = o1.station
+    SELECT t.station, t.year, t.month, AVG(t.temp) AS station_avg
+    FROM temps_readings t
+    INNER JOIN oster_readings o
+    ON t.station = o.station
     WHERE t.year >= 1950 AND t.year <= 2014
-    GROUP BY t.year, t.month) t1 INNER JOIN
-    (SELECT l.month, avg(l.temp_avg) as avg_monthly_temp
-    FROM oster_readings o2
-    INNER JOIN
-    (SELECT station, year, month, avg(temp) AS temp_avg FROM temps_readings
-    WHERE year >= 1950 AND year <= 1980
-    GROUP BY station, year, month) l
-    ON o2.station = l.station
-    GROUP BY l.month) t2
-    ON t1.month = t2.month
+    GROUP BY t.station, t.year, t.month
     """
 )
 
-diff.rdd.saveAsTextFile("6_diff")
+monthly_station_avg.registerTempTable("monthly_station_avg")
+
+short_term_avg = sqlContext.sql(
+    """
+    SELECT year, month, AVG(station_avg) AS year_month_avg
+    FROM monthly_station_avg
+    GROUP BY year, month
+    """
+)
+
+short_term_avg.registerTempTable("short_term_avg")
+
+long_term_avg = sqlContext.sql(
+    """
+    SELECT month, AVG(year_month_avg) AS month_avg
+    FROM short_term_avg
+    WHERE year >= 1950 AND year <= 1980
+    GROUP BY month
+    """
+)
+
+long_term_avg.registerTempTable("long_term_avg")
+
+temp_differences = sqlContext.sql(
+    """
+    SELECT s.year, s.month, (s.year_month_avg - l.month_avg) AS temp_difference
+    FROM short_term_avg s
+    INNER JOIN long_term_avg l
+    ON l.month = s.month
+    """
+)
+
+temp_differences.rdd.saveAsTextFile("6_diff")
 
