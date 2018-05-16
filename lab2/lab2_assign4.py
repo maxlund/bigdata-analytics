@@ -76,4 +76,3 @@ joined_result = sqlContext.sql(
 )
 
 joined_result.rdd.saveAsTextFile("4_stations")
-

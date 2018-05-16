@@ -5,9 +5,6 @@ from pyspark.sql import functions as F
 sc = SparkContext()
 sqlContext = SQLContext(sc)
 
-def myprint(x):
-    print(x)
-
 # Assignment 1
 # a)
 # temps_file lines are in format:
@@ -29,13 +26,6 @@ temps_readings = lines.map(lambda l:
 schema_temps_readings = sqlContext.createDataFrame(temps_readings)
 schema_temps_readings.registerTempTable("temps_readings")
 
-
-# example query
-# max1950 = sqlContext.sql("SELECT max(value) as value FROM temps_readings WHERE year=1950")
-
-# example table using as df
-# schemaTempReadingsMin = schemaTempReadings.groupBy('year', 'month', 'day', 'station').agg(F.min('value').alias('dailymin')).orderBy(['year', 'month', 'day', 'station'], ascending=[0,0,0,1])
-
 max_temps = sqlContext.sql(
    """
    SELECT DISTINCT t2.year, t2.station, t2.value
@@ -49,7 +39,6 @@ max_temps = sqlContext.sql(
    ORDER BY t2.value DESC
    """
 )
-
 
 min_temps = sqlContext.sql(
    """
@@ -67,6 +56,3 @@ min_temps = sqlContext.sql(
 
 max_temps.rdd.saveAsTextFile("1_max_temps")
 min_temps.rdd.saveAsTextFile("1_min_temps")
-
-#[myprint(line) for line in max_temps.rdd.collect()]
-#[myprint(line) for line in min_temps.rdd.collect()]

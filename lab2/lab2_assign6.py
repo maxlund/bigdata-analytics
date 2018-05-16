@@ -5,7 +5,7 @@ from pyspark.sql import functions as F
 sc = SparkContext()
 sqlContext = SQLContext(sc)
 
-# Assignment 4
+# Assignment 6
 # a)
 # temps_file lines are in format:
 # Station number;Date;Time;Air temperature;Quality
@@ -83,4 +83,3 @@ temp_differences = sqlContext.sql(
 )
 
 temp_differences.rdd.saveAsTextFile("6_diff")
-

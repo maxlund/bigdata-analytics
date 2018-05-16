@@ -5,7 +5,7 @@ from pyspark.sql import functions as F
 sc = SparkContext()
 sqlContext = SQLContext(sc)
 
-# Assignment 4
+# Assignment 5
 # a)
 # temps_file lines are in format:
 # Station number;Date;Time;Air temperature;Quality
@@ -39,12 +39,6 @@ schema_oster_readings.registerTempTable("oster_readings")
 schema_precip_readings = sqlContext.createDataFrame(precip_readings)
 schema_precip_readings.registerTempTable("precip_readings")
 
-# example query
-# max1950 = sqlContext.sql("SELECT max(value) as value FROM temps_readings WHERE year=1950")
-
-# example table using as df
-# schemaTempReadingsMin = schemaTempReadings.groupBy('year', 'month', 'day', 'station').agg(F.min('value').alias('dailymin')).orderBy(['year', 'month', 'day', 'station'], ascending=[0,0,0,1])
-
 stations = sqlContext.sql(
     """
     SELECT p.year_month, avg(p.precip_sum) as avg_monthly_precipitation
@@ -60,4 +54,3 @@ stations = sqlContext.sql(
 )
 
 stations.rdd.saveAsTextFile("5_precip")
-
