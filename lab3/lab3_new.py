@@ -98,6 +98,9 @@ distances_kernel_values = temps.map(
     )
 )
 
+print("*** PRINTING: distance_kernel_values: ***")
+print(distances_kernel_values.take(10))
+
 # calculate date distance kernel values
 dates_distances_kernel_values = distances_kernel_values.map(
     lambda x:
@@ -109,6 +112,9 @@ dates_distances_kernel_values = distances_kernel_values.map(
     )
 )
 
+print("*** PRINTING: dates_distance_kernel_values: ***")
+print(dates_distances_kernel_values.take(10))
+
 # persist this RDD for later calculations
 dates_distances_kernel_values.cache()
 
@@ -116,12 +122,11 @@ dates_distances_kernel_values.cache()
 times = ["04:00:00","06:00:00","08:00:00","10:00:00","12:00:00","14:00:00",
          "16:00:00","18:00:00","20:00:00","22:00:00","00:00:00"]
 
-temperature_kernel_sum_predictions = {time: 0 for time in times}
-temperature_kernel_product_predictions = {time: 0 for time in times}
-
-# calculate the time-of-day kernel values and calculate the sum or the product of all three kernels
+all_kernels_sum = list()
+i = 0
+# calculate the time-of-day kernel values and sum with the other kernels
 for time in times:
-    kernel_sum = dates_distances_kernel_values.map(
+    all_kernels_sum.append(dates_distances_kernel_values.map(
     lambda x:
         (
             # key of the rdd is (stnumber, date, timeofday)
@@ -131,34 +136,26 @@ for time in times:
             (x[1][0], x[1][1] + x[1][2] + gaussian(time_distance(time, x[0][2]), h_time))
         )
     )
-
-    kernel_prod = dates_distances_kernel_values.map(
-    lambda x:
-        (
-            # key of the rdd is (stnumber, date, timeofday)
-            # we remap the key to a constant value that is the same for all key-value pairs
-            "key",
-            # value of the rdd is (temperature, product(kv for distance, kv for date, kv for time))
-            (x[1][0], x[1][1] * x[1][2] * gaussian(time_distance(time, x[0][2]), h_time))
-        )
     )
-    
+
+    print("*** PRINTING: all_kernels_sum: ***")
+    print(all_kernels_sum[i].take(10))
+    i += 1
+      
+
+temperature_predictions = {time: 0 for time in times}
+
+for kernel, time in zip(all_kernels_sum, times):
     # since all keys are the same, the reduceByKey will produce the value 
     # (sum(kernel_value * temperature), sum(kernel_value))
-    kernel_sum = kernel_sum.map(lambda x: (x[0], (x[1][0] * x[1][1], x[1][1])))
-    kernel_sum = kernel_sum.reduceByKey(lambda a, b: (a[0] + b[0], a[1] + b[1]))
+    kernel = kernel.reduceByKey(lambda a, b: (a[0] * a[1] + b[0] * b[1], a[1] + b[1]))
+    print("*** PRINTING: kernel (after reduceByKey: ***")
+    print(kernel.take(10))
     # we can now calculate the final prediction as the weighted average
-    pred_sum = kernel_sum.map(lambda x: (x[0], x[1][0] / x[1][1])).collectAsMap()
-    temperature_kernel_sum_predictions[time] = pred_sum["key"]
+    pred = kernel.map(lambda x: (x[0], x[1][0] / x[1][1])).collectAsMap()
+    print("*** PRINTING: pred ***")
+    print(pred.take(10))
+    temperature_predictions[time] = pred["key"]
 
-    # do the same using the product of the kernels instead of the sum
-    kernel_prod = kernel_prod.map(lambda x: (x[0], (x[1][0] * x[1][1], x[1][1])))
-    kernel_prod = kernel_prod.reduceByKey(lambda a, b: (a[0] + b[0], a[1] + b[1]))
-    pred_prod = kernel_prod.map(lambda x: (x[0], x[1][0] / x[1][1])).collectAsMap()
-    temperature_kernel_product_predictions[time] = pred_prod["key"]
-    
-print("*** predictions using the sum of kernels ***")
-print(temperature_kernel_sum_predictions)
-
-print("*** predictions using the product of kernels ***")
-print(temperature_kernel_prod_predictions)
+print(temperature_predictions)
+print("*** kernel values done ***")
