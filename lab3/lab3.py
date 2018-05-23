@@ -161,4 +161,4 @@ print("*** predictions using the sum of kernels ***")
 print(temperature_kernel_sum_predictions)
 
 print("*** predictions using the product of kernels ***")
-print(temperature_kernel_prod_predictions)
+print(temperature_kernel_product_predictions)
